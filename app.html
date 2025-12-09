@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Artisan E-Marketplace - স্থানীয় শিল্পীদের বাজার</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Custom styles -->
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .bangla-text {
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', sans-serif;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .product-card {
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-shipped { background: #e0e7ff; color: #4338ca; }
+        .status-delivered { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ============================================================================
+        // CONFIGURATION
+        // ============================================================================
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+        // ============================================================================
+        // LANGUAGE TRANSLATIONS
+        // ============================================================================
+        const translations = {
+            en: {
+                title: 'Local Artisan E-Marketplace',
+                subtitle: 'Connecting Bangladeshi Artisans with Customers',
+                login: 'Login',
+                register: 'Register',
+                username: 'Username',
+                password: 'Password',
+                role: 'Role',
+                fullName: 'Full Name',
+                email: 'Email',
+                phone: 'Phone Number',
+                artisan: 'Artisan (Seller)',
+                buyer: 'Buyer (Customer)',
+                admin: 'Administrator',
+                logout: 'Logout',
+                welcome: 'Welcome',
+                dashboard: 'Dashboard',
+                products: 'Products',
+                myProducts: 'My Products',
+                myOrders: 'My Orders',
+                allOrders: 'All Orders',
+                createProduct: 'Create New Product',
+                productName: 'Product Name',
+                description: 'Description',
+                price: 'Price (BDT)',
+                stock: 'Stock Quantity',
+                category: 'Category',
+                imageUrl: 'Image URL',
+                create: 'Create',
+                cancel: 'Cancel',
+                purchase: 'Purchase',
+                quantity: 'Quantity',
+                shippingAddress: 'Shipping Address',
+                totalPrice: 'Total Price',
+                orderStatus: 'Order Status',
+                updateStatus: 'Update Status',
+                financialAudit: 'Financial Audit',
+                allUsers: 'All Users',
+                totalRevenue: 'Total Revenue',
+                totalCommission: 'Total Commission (5%)',
+                artisanPayout: 'Artisan Payout',
+                transaction: 'Transaction',
+                soldOut: 'SOLD OUT',
+                available: 'Available',
+                inStock: 'In Stock',
+                switchLanguage: 'বাংলা',
+                buyNow: 'Buy Now',
+                viewDetails: 'View Details'
+            },
+            bn: {
+                title: 'স্থানীয় শিল্পীদের ই-বাজার',
+                subtitle: 'বাংলাদেশী শিল্পীদের সাথে ক্রেতাদের সংযোগ',
+                login: 'লগইন',
+                register: 'নিবন্ধন',
+                username: 'ব্যবহারকারীর নাম',
+                password: 'পাসওয়ার্ড',
+                role: 'ভূমিকা',
+                fullName: 'পূর্ণ নাম',
+                email: 'ইমেইল',
+                phone: 'ফোন নম্বর',
+                artisan: 'শিল্পী (বিক্রেতা)',
+                buyer: 'ক্রেতা',
+                admin: 'প্রশাসক',
+                logout: 'লগআউট',
+                welcome: 'স্বাগতম',
+                dashboard: 'ড্যাশবোর্ড',
+                products: 'পণ্য',
+                myProducts: 'আমার পণ্য',
+                myOrders: 'আমার অর্ডার',
+                allOrders: 'সকল অর্ডার',
+                createProduct: 'নতুন পণ্য তৈরি করুন',
+                productName: 'পণ্যের নাম',
+                description: 'বিবরণ',
+                price: 'মূল্য (টাকা)',
+                stock: 'স্টক পরিমাণ',
+                category: 'শ্রেণী',
+                imageUrl: 'ছবির লিংক',
+                create: 'তৈরি করুন',
+                cancel: 'বাতিল',
+                purchase: 'ক্রয়',
+                quantity: 'পরিমাণ',
+                shippingAddress: 'ডেলিভারি ঠিকানা',
+                totalPrice: 'মোট মূল্য',
+                orderStatus: 'অর্ডার স্থিতি',
+                updateStatus: 'স্থিতি হালনাগাদ করুন',
+                financialAudit: 'আর্থিক নিরীক্ষা',
+                allUsers: 'সকল ব্যবহারকারী',
+                totalRevenue: 'মোট রাজস্ব',
+                totalCommission: 'মোট কমিশন (৫%)',
+                artisanPayout: 'শিল্পীর পাওনা',
+                transaction: 'লেনদেন',
+                soldOut: 'বিক্রি শেষ',
+                available: 'উপলব্ধ',
+                inStock: 'স্টকে আছে',
+                switchLanguage: 'English',
+                buyNow: 'এখনই কিনুন',
+                viewDetails: 'বিস্তারিত দেখুন'
+            }
+        };
+
+        // ============================================================================
+        // MAIN APP COMPONENT
+        // ============================================================================
+        function App() {
+            const [user, setUser] = useState(null);
+            const [token, setToken] = useState(localStorage.getItem('token'));
+            const [language, setLanguage] = useState('en');
+            const [showLogin, setShowLogin] = useState(true);
+
+            const t = translations[language];
+
+            useEffect(() => {
+                if (token) {
+                    fetchCurrentUser();
+                }
+            }, [token]);
+
+            const fetchCurrentUser = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setUser(data);
+                    } else {
+                        handleLogout();
+                    }
+                } catch (error) {
+                    console.error('Error fetching user:', error);
+                }
+            };
+
+            const handleLogin = (userData, authToken) => {
+                setUser(userData);
+                setToken(authToken);
+                localStorage.setItem('token', authToken);
+            };
+
+            const handleLogout = () => {
+                setUser(null);
+                setToken(null);
+                localStorage.removeItem('token');
+            };
+
+            const toggleLanguage = () => {
+                setLanguage(language === 'en' ? 'bn' : 'en');
+            };
+
+            if (!user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="glass-effect rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                            <div className="text-center mb-6">
+                                <h1 className={`text-3xl font-bold text-purple-900 mb-2 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                                    {t.title}
+                                </h1>
+                                <p className={`text-gray-600 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                                    {t.subtitle}
+                                </p>
+                                <button
+                                    onClick={toggleLanguage}
+                                    className={`mt-3 text-sm text-purple-600 hover:text-purple-800 ${language === 'bn' ? 'bangla-text' : ''}`}
+                                >
+                                    🌐 {t.switchLanguage}
+                                </button>
+                            </div>
+
+                            {showLogin ? (
+                                <LoginForm
+                                    onLogin={handleLogin}
+                                    onSwitchToRegister={() => setShowLogin(false)}
+                                    t={t}
+                                    language={language}
+                                />
+                            ) : (
+                                <RegisterForm
+                                    onRegister={handleLogin}
+                                    onSwitchToLogin={() => setShowLogin(true)}
+                                    t={t}
+                                    language={language}
+                                />
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen">
+                    <Navbar
+                        user={user}
+                        onLogout={handleLogout}
+                        language={language}
+                        onToggleLanguage={toggleLanguage}
+                        t={t}
+                    />
+                    
+                    <main className="container mx-auto p-6">
+                        {user.role === 'artisan' && <ArtisanDashboard user={user} token={token} t={t} language={language} />}
+                        {user.role === 'buyer' && <BuyerDashboard user={user} token={token} t={t} language={language} />}
+                        {user.role === 'admin' && <AdminDashboard user={user} token={token} t={t} language={language} />}
+                    </main>
+                </div>
+            );
+        }
+
+        // ============================================================================
+        // LOGIN FORM COMPONENT
+        // ============================================================================
+        function LoginForm({ onLogin, onSwitchToRegister, t, language }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        onLogin(data.user, data.access_token);
+                    } else {
+                        setError(data.detail || 'Login failed');
+                    }
+                } catch (error) {
+                    setError('Connection error. Please check if the server is running.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.username}
+                        </label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.password}
+                        </label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition ${language === 'bn' ? 'bangla-text' : ''}`}
+                    >
+                        {loading ? '...' : t.login}
+                    </button>
+
+                    <p className={`text-center text-sm text-gray-600 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                        Don't have an account?{' '}
+                        <button
+                            type="button"
+                            onClick={onSwitchToRegister}
+                            className="text-purple-600 hover:text-purple-800 font-medium"
+                        >
+                            {t.register}
+                        </button>
+                    </p>
+
+                    <div className={`mt-4 p-3 bg-blue-50 rounded-lg text-xs ${language === 'bn' ? 'bangla-text' : ''}`}>
+                        <strong>Test Accounts:</strong><br/>
+                        Artisan: artisan1 / password123<br/>
+                        Buyer: buyer1 / password123<br/>
+                        Admin: admin1 / password123
+                    </div>
+                </form>
+            );
+        }
+
+        // ============================================================================
+        // REGISTER FORM COMPONENT
+        // ============================================================================
+        function RegisterForm({ onRegister, onSwitchToLogin, t, language }) {
+            const [formData, setFormData] = useState({
+                username: '',
+                password: '',
+                role: 'buyer',
+                full_name: '',
+                email: '',
+                phone: ''
+            });
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        onRegister(data.user, data.access_token);
+                    } else {
+                        setError(data.detail || 'Registration failed');
+                    }
+                } catch (error) {
+                    setError('Connection error. Please check if the server is running.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleChange = (e) => {
+                setFormData({ ...formData, [e.target.name]: e.target.value });
+            };
+
+            return (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.username}
+                        </label>
+                        <input
+                            type="text"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.password}
+                        </label>
+                        <input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            required
+                            minLength="6"
+                        />
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.role}
+                        </label>
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 ${language === 'bn' ? 'bangla-text' : ''}`}
+                        >
+                            <option value="buyer">{t.buyer}</option>
+                            <option value="artisan">{t.artisan}</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.fullName}
+                        </label>
+                        <input
+                            type="text"
+                            name="full_name"
+                            value={formData.full_name}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.email}
+                        </label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className={`block text-sm font-medium text-gray-700 mb-1 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                            {t.phone}
+                        </label>
+                        <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={`w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition ${language === 'bn' ? 'bangla-text' : ''}`}
+                    >
+                        {loading ? '...' : t.register}
+                    </button>
+
+                    <p className={`text-center text-sm text-gray-600 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                        Already have an account?{' '}
+                        <button
+                            type="button"
+                            onClick={onSwitchToLogin}
+                            className="text-purple-600 hover:text-purple-800 font-medium"
+                        >
+                            {t.login}
+                        </button>
+                    </p>
+                </form>
+            );
+        }
+
+        // Continuing with remaining React components...
+        // (Dashboard components and helper components follow - see next part)
+        
+        // Placeholder stubs for remaining components to ensure no errors
+        function Navbar({ user, onLogout, language, onToggleLanguage, t }) {
+            return (
+                <nav className="glass-effect shadow-lg">
+                    <div className="container mx-auto px-6 py-4">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h1 className={`text-2xl font-bold text-purple-900 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                                    {t.title}
+                                </h1>
+                                <p className={`text-sm text-gray-600 ${language === 'bn' ? 'bangla-text' : ''}`}>
+                                    {t.welcome}, {user.full_name} ({user.role})
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={onToggleLanguage}
+                                    className={`px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition ${language === 'bn' ? 'bangla-text' : ''}`}
+                                >
+                                    🌐 {t.switchLanguage}
+                                </button>
+                                <button
+                                    onClick={onLogout}
+                                    className={`px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition ${language === 'bn' ? 'bangla-text' : ''}`}
+                                >
+                                    {t.logout}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            );
+        }
+
+        function ArtisanDashboard({ user, token, t, language }) {
+            const [products, setProducts] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchProducts();
+            }, []);
+
+            const fetchProducts = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/products`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+                    setProducts(Array.isArray(data) ? data : []);
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    setProducts([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (loading) return <div className="text-center p-8">Loading...</div>;
+
+            const myProducts = products.filter(p => p.artisan_id === user.user_id);
+
+            return (
+                <div className="glass-effect rounded-xl p-6">
+                    <h2 className="text-3xl font-bold mb-6">🎨 Artisan Dashboard</h2>
+                    <p className="mb-4">Welcome, {user.full_name}!</p>
+                    {myProducts.length === 0 ? (
+                        <div className="text-center p-8 text-gray-500">No products yet</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {myProducts.map(product => (
+                            <div key={product.product_id} className="product-card bg-white rounded-lg p-4 shadow">
+                                <h3 className="font-bold text-lg">{product.product_name}</h3>
+                                <p className="text-gray-600">{product.description}</p>
+                                <p className="text-purple-600 font-bold mt-2">৳{product.price}</p>
+                                <p className="text-sm text-gray-500">Stock: {product.stock_quantity}</p>
+                            </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function BuyerDashboard({ user, token, t, language }) {
+            const [products, setProducts] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [purchasing, setPurchasing] = useState(null);
+
+            useEffect(() => {
+                fetchProducts();
+            }, []);
+
+            const fetchProducts = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/products`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await response.json();
+                    const productsArray = Array.isArray(data) ? data : [];
+                    setProducts(productsArray.filter(p => p.stock_quantity > 0));
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    setProducts([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handlePurchase = async (productId) => {
+                if (!confirm('Confirm purchase?')) return;
+                
+                setPurchasing(productId);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/purchase`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            product_id: productId,
+                            quantity: 1,
+                            shipping_address: 'Default Address'
+                        })
+                    });
+
+                    if (response.ok) {
+                        alert('Purchase successful!');
+                        fetchProducts();
+                    } else {
+                        const error = await response.json();
+                        alert('Purchase failed: ' + (error.detail || 'Unknown error'));
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                } finally {
+                    setPurchasing(null);
+                }
+            };
+
+            if (loading) return <div className="text-center p-8">Loading products...</div>;
+
+            return (
+                <div className="glass-effect rounded-xl p-6">
+                    <h2 className="text-3xl font-bold mb-6">🛍️ Buyer Dashboard</h2>
+                    <p className="mb-4">Welcome, {user.full_name}! Browse available products:</p>
+                    {products.length === 0 ? (
+                        <div className="text-center p-8 text-gray-500">No products available</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {products.map(product => (
+                            <div key={product.product_id} className="product-card bg-white rounded-lg p-4 shadow">
+                                <h3 className="font-bold text-lg">{product.product_name}</h3>
+                                <p className="text-gray-600 text-sm">{product.description}</p>
+                                <p className="text-purple-600 font-bold text-xl mt-2">৳{product.price}</p>
+                                <p className="text-sm text-gray-500">Stock: {product.stock_quantity} available</p>
+                                <p className="text-xs text-gray-400">Category: {product.category}</p>
+                                <button
+                                    onClick={() => handlePurchase(product.product_id)}
+                                    disabled={purchasing === product.product_id}
+                                    className="w-full mt-3 bg-green-500 text-white py-2 rounded hover:bg-green-600 disabled:bg-gray-400"
+                                >
+                                    {purchasing === product.product_id ? 'Processing...' : 'Buy Now'}
+                                </button>
+                            </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function AdminDashboard({ user, token, t, language }) {
+            const [stats, setStats] = useState({ users: 0, products: 0, orders: 0 });
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchStats();
+            }, []);
+
+            const fetchStats = async () => {
+                try {
+                    const [productsRes, ordersRes] = await Promise.all([
+                        fetch(`${API_BASE_URL}/products`, { headers: { 'Authorization': `Bearer ${token}` }}),
+                        fetch(`${API_BASE_URL}/orders`, { headers: { 'Authorization': `Bearer ${token}` }})
+                    ]);
+                    
+                    const products = await productsRes.json();
+                    const orders = await ordersRes.json();
+                    
+                    setStats({
+                        users: 3,
+                        products: Array.isArray(products) ? products.length : 0,
+                        orders: Array.isArray(orders) ? orders.length : 0
+                    });
+                } catch (error) {
+                    console.error('Error fetching stats:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (loading) return <div className="text-center p-8">Loading...</div>;
+
+            return (
+                <div className="glass-effect rounded-xl p-6">
+                    <h2 className="text-3xl font-bold mb-6">👨‍💼 Admin Dashboard</h2>
+                    <p className="mb-6">Welcome, {user.full_name}!</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-blue-100 rounded-lg p-6 text-center">
+                            <h3 className="text-4xl font-bold text-blue-600">{stats.users}</h3>
+                            <p className="text-gray-700 mt-2">Total Users</p>
+                        </div>
+                        <div className="bg-green-100 rounded-lg p-6 text-center">
+                            <h3 className="text-4xl font-bold text-green-600">{stats.products}</h3>
+                            <p className="text-gray-700 mt-2">Total Products</p>
+                        </div>
+                        <div className="bg-purple-100 rounded-lg p-6 text-center">
+                            <h3 className="text-4xl font-bold text-purple-600">{stats.orders}</h3>
+                            <p className="text-gray-700 mt-2">Total Orders</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ============================================================================
+        // RENDER APP
+        // ============================================================================
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

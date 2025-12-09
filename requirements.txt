@@ -1,0 +1,44 @@
+# ============================================================================
+# Local Artisan E-Marketplace - Python Dependencies
+# ============================================================================
+# Purpose: Lists all required Python packages for the backend
+# Installation: pip install -r requirements.txt
+# ============================================================================
+
+# Core Web Framework
+fastapi==0.104.1          # Modern, high-performance web framework
+uvicorn[standard]==0.24.0 # ASGI server for running FastAPI
+python-multipart==0.0.6   # For handling file uploads
+
+# Database
+psycopg2-binary==2.9.9    # PostgreSQL database adapter
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0  # JWT token generation and validation
+passlib[bcrypt]==1.7.4    # Password hashing with bcrypt
+bcrypt==4.1.1             # Bcrypt hashing algorithm
+pydantic[email]==2.5.0    # Data validation with email support
+
+# CORS & HTTP
+python-dotenv==1.0.0      # Environment variable management
+email-validator==2.1.0    # Email validation for Pydantic
+
+# ============================================================================
+# INSTALLATION INSTRUCTIONS FOR FACULTY
+# ============================================================================
+#
+# 1. Open PowerShell/Terminal in the project directory
+# 2. Create a virtual environment (recommended):
+#    python -m venv venv
+#
+# 3. Activate the virtual environment:
+#    Windows: .\venv\Scripts\Activate.ps1
+#    Linux/Mac: source venv/bin/activate
+#
+# 4. Install all dependencies:
+#    pip install -r requirements.txt
+#
+# 5. Verify installation:
+#    pip list
+#
+# ============================================================================
